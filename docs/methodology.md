@@ -1,32 +1,33 @@
+<!-- fullWidth: true tocVisible: false tableWrap: true -->
 # Methodology
 
 How the auction results are found, collected, normalised and stored, and what that means for interpreting the numbers.
 
-## 1. Research question and scope
+## 1\. Research question and scope
 
 **Goal:** build a lot-level history of secondary-market prices for Hermès handbags, focusing on the two flagship models, **Birkin** and **Kelly**, so they can be compared by size, leather, colour, hardware, year, condition, auction house and date.
 
-**In scope:** public auction results (sold and unsold lots) with estimates and, where available, the final price.
+**In scope:** public auction results (sold and unsold lots) with estimates and, where available, the final price.\
 **Out of scope (for now):** retail resale listings (fixed-price shops), private sales, and brands other than Hermès. The data model already supports them.
 
-## 2. Choosing the sources
+## 2\. Choosing the sources
 
 Candidate sources were found by searching for auction-result databases and checking where Hermès bag sales actually happen. Two kinds of source came out:
 
-- **Auction houses** that publish their own results (Christie's, Sotheby's, Artcurial, Bonhams, Heritage, Gros & Delettrez, Phillips, Drouot houses). These are the primary source: official prices, lot URLs, recent sales.
+- **Auction houses** that publish their own results (Chris²tie's, Sotheby's, Artcurial, Bonhams, Heritage, Gros & Delettrez, Phillips, Drouot houses). These are the primary source: official prices, lot URLs, recent sales.
 - **Aggregators** that compile results from many houses. CollectorSquare's *Lux Price Index* claims about 600,000 results. A sample of 320 Birkin 35 lots on it came from Christie's (49%), Artcurial (14%), Sotheby's (12%), Bonhams (8%), Heritage (8%), Gros & Delettrez (7%), plus Aguttes and Cornette de Saint Cyr.
 
 Selected so far:
 
-| Source | Why |
-|---|---|
-| Christie's | Largest single seller of Hermès bags at auction (Hong Kong, New York, Paris, London, Geneva); results are public and current. |
-| CollectorSquare | One place for many houses, including French houses with no scraper yet. Caveat: its data stops around December 2024. |
-| Sotheby's | Second major house for handbags; past results need a logged-in account. |
+| Source          | Why                                                                                                                           |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Christie's      | Largest single seller of Hermès bags at auction (Hong Kong, New York, Paris, London, Geneva); results are public and current. |
+| CollectorSquare | One place for many houses, including French houses with no scraper yet. Caveat: its data stops around December 2024.          |
+| Sotheby's       | Second major house for handbags; past results need a logged-in account.                                                       |
 
 Further candidates, in order of value: Artcurial, Bonhams, Heritage Auctions, Gros & Delettrez, Phillips, Drouot.com. CollectorSquare already covers most of them up to 2024, so direct scrapers would mainly add 2025–2026 results.
 
-## 3. Collection process
+## 3\. Collection process
 
 For every source the pipeline is the same:
 
@@ -56,7 +57,7 @@ Lots have no individual page on CollectorSquare, so **Lien URL** points to the m
 
 Sotheby's search runs in the browser, and past lots are only listed for logged-in users. The scraper will open the past-lots search pages in the logged-in profile and record the results those pages display. It does not call the search service directly, because that would mean reusing the site's private access key outside the page. *Status: in progress.*
 
-## 4. Normalisation
+## 4\. Normalisation
 
 Auction houses describe a bag in one free-text title, for example:
 
@@ -64,26 +65,26 @@ Auction houses describe a bag in one free-text title, for example:
 
 `src/parse.ts` extracts, in English and French:
 
-| Attribute | Rule |
-|---|---|
-| Modèle | first known model name (Birkin, Kelly, Constance…) plus variants found (Sellier, Retourné, Shoulder, Mini, Cargo, Ghillies…) |
-| Taille | the two-digit number following the model name (`Birkin 25`, `Kelly 28 cm`) |
-| Matière | every known leather/skin word (Togo, Epsom, Swift, Box, Porosus, Niloticus, Alligator, Ostrich, Lizard…) |
-| Quincaillerie | the words before "hardware" (palladium, gold, brushed gold, rose gold, permabrass…) or the French "quincaillerie …" |
-| Couleur | English titles: the words before the first leather/model word, minus filler (matte, shiny, limited edition, HSS…). French titles: the word after "en cuir …" |
-| Année | the last year between 1940 and 2039 in the title |
-| État | Christie's condition grade (`GRADE: 1.5`); CollectorSquare's own condition label when given |
+| Attribute     | Rule                                                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Modèle        | first known model name (Birkin, Kelly, Constance…) plus variants found (Sellier, Retourné, Shoulder, Mini, Cargo, Ghillies…)                                 |
+| Taille        | the two-digit number following the model name (`Birkin 25`, `Kelly 28 cm`)                                                                                   |
+| Matière       | every known leather/skin word (Togo, Epsom, Swift, Box, Porosus, Niloticus, Alligator, Ostrich, Lizard…)                                                     |
+| Quincaillerie | the words before "hardware" (palladium, gold, brushed gold, rose gold, permabrass…) or the French "quincaillerie …"                                          |
+| Couleur       | English titles: the words before the first leather/model word, minus filler (matte, shiny, limited edition, HSS…). French titles: the word after "en cuir …" |
+| Année         | the last year between 1940 and 2039 in the title                                                                                                             |
+| État          | Christie's condition grade (`GRADE: 1.5`); CollectorSquare's own condition label when given                                                                  |
 
 Accessory lists ("includes … dustbag and box") are removed first so that "box" or "felt" are not read as leathers.
 
 Values given directly by a source always win over parsed ones. The original title is kept in **Titre du lot** so any parsed value can be checked.
 
-## 5. Storage
+## 5\. Storage
 
 - **SQLite** (`data/lots.sqlite`): one table `lots`, primary key `id = source:lot-id-on-that-source`. Re-running replaces rows, so the data can be refreshed without duplicates.
 - **Excel** (`data/lots.xlsx`): regenerated from SQLite on every run, newest sales first, with frozen header, filters and clickable URLs.
 
-## 6. Limitations and how to handle them
+## 6\. Limitations and how to handle them
 
 - **Fees are not comparable across houses.** Christie's and Sotheby's publish prices *with* buyer's premium; CollectorSquare's price may be the hammer price. Compare like with like (filter on `source` or on which price column is filled), or apply each house's premium schedule.
 - **Currencies are not converted.** Prices are kept in the currency of the sale (HKD, USD, EUR, GBP, CHF). Convert at the sale-date rate before averaging.
@@ -93,6 +94,6 @@ Values given directly by a source always win over parsed ones. The original titl
 - **Coverage bias.** Major houses and Hong Kong / New York sales dominate; small regional sales are under-represented. CollectorSquare data ends in late 2024.
 - **Sites change.** The scrapers depend on page and service formats that can change without notice. Christie's stops with an explicit error if its search format changes, and CollectorSquare warns when it looks logged out. Still, spot-check a few rows after each run.
 
-## 7. Ethics and compliance
+## 7\. Ethics and compliance
 
 Only results visible to a normal visitor or to the user's own logged-in account are collected. Requests are spaced about one second apart, and data is stored locally for research. Logins live in a local browser profile (`.profile/`) that is git-ignored and must not be shared.

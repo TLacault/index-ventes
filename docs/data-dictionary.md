@@ -1,3 +1,4 @@
+<!-- fullWidth: true tocVisible: false tableWrap: true -->
 # Data dictionary
 
 One row = one auction lot. Column names are the SQLite names; the Excel header is in brackets.

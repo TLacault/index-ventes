@@ -1,3 +1,4 @@
+<!-- fullWidth: true tocVisible: false tableWrap: true -->
 # Index Ventes
 
 A price database of **Hermès Birkin and Kelly bags sold at auction**, built for a luxury-market research assignment.
